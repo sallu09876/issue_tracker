@@ -115,9 +115,9 @@ export async function generateIssueAnalysis(
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: modelName,
-      generationConfig: {
-        responseMimeType: 'application/json',
-      },
+      // generationConfig: {
+      //   responseMimeType: 'application/json',
+      // },
     });
     const prompt = buildPrompt(issue, issueComments);
     const result = await model.generateContent(prompt);
