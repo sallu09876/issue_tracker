@@ -1,183 +1,310 @@
-# Issue Management Platform
+# IssueFlow — Issue Management Platform
 
-A minimal but polished issue tracker inspired by Linear and Jira. Track bugs, features, and improvements with filtering, comments, and AI-powered issue analysis via Google Gemini.
+A minimal, full-stack issue tracking platform built as a coding challenge for Zartek Technologies. Designed with clean architecture, type safety, and AI-powered analysis.
+
+## Live Demo
+
+| | URL |
+|---|---|
+| 🌐 Frontend | https://issue-tracker-psi-rosy.vercel.app |
+| ⚙️ Backend API | https://issue-tracker-backend-f167.onrender.com/api |
+| 💚 Health Check | https://issue-tracker-backend-f167.onrender.com/api/health |
+
+> **Note:** Backend is hosted on Render's free tier and may take 20–30 seconds to respond on the first request after a period of inactivity.
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 14 (App Router), React 18, TailwindCSS, TypeScript |
+|---|---|
+| Frontend | Next.js 14 (App Router), TailwindCSS, TypeScript |
 | Backend | Node.js, Express, TypeScript |
-| Database | PostgreSQL 14+ |
+| Database | PostgreSQL (Render managed) |
 | ORM | Drizzle ORM |
 | AI | Google Gemini API |
+| Deployment | Vercel (frontend), Render (backend + DB) |
+
+---
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph Client["🌐 Frontend (Vercel)"]
+        A[Next.js 14 App Router]
+        B[TailwindCSS UI]
+        C[TypeScript]
+    end
+
+    subgraph Server["⚙️ Backend (Render)"]
+        D[Express.js REST API]
+        E[Drizzle ORM]
+        F[Zod Validation]
+    end
+
+    subgraph Database["🗄️ Database (Render)"]
+        G[(PostgreSQL)]
+        H[issues table]
+        I[comments table]
+        J[ai_analyses table]
+    end
+
+    subgraph AI["🤖 AI Layer"]
+        K[Google Gemini API]
+    end
+
+    A -->|REST API calls| D
+    D --> E
+    E --> G
+    G --> H
+    G --> I
+    G --> J
+    D -->|Issue + Comments| K
+    K -->|Summary, Root Cause,\nSuggestions, Sentiment| D
+```
+
+## Database Schema
+
+```mermaid
+erDiagram
+    issues {
+        uuid id PK
+        varchar title
+        text description
+        varchar status
+        varchar priority
+        varchar label
+        timestamp created_at
+        timestamp updated_at
+    }
+    comments {
+        uuid id PK
+        uuid issue_id FK
+        text content
+        varchar author
+        timestamp created_at
+    }
+    ai_analyses {
+        uuid id PK
+        uuid issue_id FK
+        text summary
+        text root_cause
+        text suggestions
+        varchar sentiment
+        timestamp generated_at
+    }
+
+    issues ||--o{ comments : "has many"
+    issues ||--o| ai_analyses : "has one"
+```
+
+## API Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant Backend
+    participant Database
+    participant Gemini
+
+    User->>Frontend: Create Issue
+    Frontend->>Backend: POST /api/issues
+    Backend->>Database: Insert issue
+    Database-->>Backend: Issue created
+    Backend-->>Frontend: Issue object
+    Frontend-->>User: Redirect to issue detail
+
+    User->>Frontend: Generate AI Analysis
+    Frontend->>Backend: POST /api/analysis/generate/:id
+    Backend->>Database: Fetch issue + comments
+    Database-->>Backend: Issue data
+    Backend->>Gemini: Send prompt
+    Gemini-->>Backend: JSON analysis
+    Backend->>Database: Save analysis
+    Backend-->>Frontend: Analysis result
+    Frontend-->>User: Show insights
+```
 
 ## Features
 
-- Create, read, update, and delete issues
-- Filter issues by status, priority, label, and search text
-- Issue labels: bug, feature, improvement, question
-- Priority levels: low, medium, high, critical
-- Status workflow: open → in progress → resolved → closed
-- Threaded-style comments per issue with author attribution
-- AI analysis panel — Gemini generates summary, root cause, suggestions, and sentiment
-- Dark-themed, responsive UI with a Linear/Notion-inspired aesthetic
-- Seed data script for quick local development
+- Create, view, edit, and delete issues
+- Filter issues by status, priority, and label
+- Search issues by title
+- View full issue detail with discussion thread
+- Add and delete comments on issues
+- Trigger Gemini AI analysis — generates summary, root cause, suggestions, and sentiment
+- Responsive design, works on mobile and desktop
 
-## Prerequisites
-
-- **Node.js** 18+
-- **PostgreSQL** 14+
-- **Gemini API key** — get one free at [Google AI Studio](https://aistudio.google.com/app/apikey)
-
-## Setup & Installation
-
-### 1. Clone the repository
-
-```bash
-git clone <your-repo-url>
-cd issue_tracker
-```
-
-### 2. Backend setup
-
-```bash
-cd backend
-npm install
-cp ../.env.example .env
-```
-
-Edit `backend/.env` and fill in your values (see [Environment Variables](#environment-variables) below).
-
-### 3. Run database migrations
-
-```bash
-npm run db:generate
-npm run db:migrate
-```
-
-### 4. Seed sample data
-
-```bash
-npm run db:seed
-```
-
-### 5. Start the backend
-
-```bash
-npm run dev
-```
-
-The API will be available at `http://localhost:4000`.
-
-### 6. Frontend setup
-
-Open a new terminal:
-
-```bash
-cd frontend
-npm install
-cp .env.local.example .env.local
-```
-
-Edit `frontend/.env.local` if your backend runs on a different port.
-
-### 7. Start the frontend
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string (backend) | `postgresql://postgres:pg7110@localhost:5432/issue_tracker` |
-| `PORT` | Backend server port | `4000` |
-| `GEMINI_API_KEY` | Google Gemini API key for AI analysis | `AIza...` |
-| `GEMINI_MODEL` | Gemini model ID (optional) | `gemini-2.5-flash` |
-| `NEXT_PUBLIC_API_URL` | Backend API base URL (frontend) | `http://localhost:4000/api` |
-
-### PostgreSQL reference
-
-| Setting | Value |
-|---------|-------|
-| Host | `localhost` |
-| Port | `5432` |
-| User | `postgres` |
-| Password | `pg7110` |
-| Database | `issue_tracker` |
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| GET | `/api/issues` | List issues (query: `status`, `priority`, `label`, `search`) |
-| GET | `/api/issues/:id` | Get issue with comment count and latest AI analysis |
-| POST | `/api/issues` | Create a new issue |
-| PUT | `/api/issues/:id` | Update an issue |
-| DELETE | `/api/issues/:id` | Delete an issue |
-| GET | `/api/comments/:issueId` | List comments for an issue |
-| POST | `/api/comments` | Add a comment |
-| DELETE | `/api/comments/:id` | Delete a comment |
-| GET | `/api/analysis/:issueId` | Get latest AI analysis for an issue |
-| POST | `/api/analysis/generate/:issueId` | Generate and save a new AI analysis |
-
-### Response format
-
-- **Success:** `{ "data": ... }`
-- **Error:** `{ "error": "message", "status": 400 }`
+---
 
 ## Project Structure
 
 ```
-issue_tracker/
-├── backend/          # Express API + Drizzle ORM
+issue-tracker/
+├── backend/
 │   ├── src/
-│   │   ├── db/       # Schema, connection, seed
-│   │   ├── routes/   # REST route handlers
-│   │   ├── services/ # Business logic + Gemini AI
-│   │   └── middleware/
-│   └── drizzle/      # SQL migrations
-├── frontend/         # Next.js 14 App Router
-│   ├── app/          # Pages (issues list, detail, create, edit)
-│   ├── components/   # UI components
-│   ├── lib/          # API client
-│   └── types/        # Shared TypeScript types
-└── .env.example
+│   │   ├── db/
+│   │   │   ├── schema.ts        # Drizzle schema (issues, comments, ai_analyses)
+│   │   │   └── index.ts         # DB connection
+│   │   ├── routes/
+│   │   │   ├── issues.ts        # CRUD endpoints for issues
+│   │   │   ├── comments.ts      # CRUD endpoints for comments
+│   │   │   └── analysis.ts      # AI analysis endpoints
+│   │   ├── services/
+│   │   │   ├── issueService.ts
+│   │   │   ├── commentService.ts
+│   │   │   └── aiService.ts     # Gemini integration
+│   │   ├── middleware/
+│   │   │   └── errorHandler.ts
+│   │   └── index.ts
+│   └── drizzle/migrations/
+└── frontend/
+    ├── app/
+    │   ├── page.tsx             # Issues list
+    │   ├── issues/new/          # Create issue
+    │   └── issues/[id]/         # Issue detail + edit
+    ├── components/
+    └── lib/api.ts               # All API calls
 ```
 
-## Useful Scripts
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/health` | Health check |
+| GET | `/api/issues` | List all issues (supports ?status, ?priority, ?label, ?search) |
+| GET | `/api/issues/:id` | Get single issue |
+| POST | `/api/issues` | Create issue |
+| PUT | `/api/issues/:id` | Update issue |
+| DELETE | `/api/issues/:id` | Delete issue |
+| GET | `/api/comments/:issueId` | Get comments for an issue |
+| POST | `/api/comments` | Add a comment |
+| DELETE | `/api/comments/:id` | Delete a comment |
+| GET | `/api/analysis/:issueId` | Get latest AI analysis |
+| POST | `/api/analysis/generate/:issueId` | Generate new AI analysis |
+
+---
+
+## Local Setup
+
+### Prerequisites
+- Node.js 18+
+- PostgreSQL 14+
+- Gemini API key — get free at [aistudio.google.com](https://aistudio.google.com)
+
+### 1. Clone the repo
+```bash
+git clone https://github.com/sallu09876/issue_tracker.git
+cd issue_tracker
+```
+
+### 2. Backend setup
+```bash
+cd backend
+npm install
+cp .env.example .env
+```
+
+Fill in `.env`:
+```
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/issue_tracker
+PORT=4000
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+Run migrations and seed data:
+```bash
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+```
+
+Start the backend:
+```bash
+npm run dev
+```
+
+### 3. Frontend setup
+```bash
+cd ../frontend
+npm install
+cp .env.example .env.local
+```
+
+Fill in `.env.local`:
+```
+NEXT_PUBLIC_API_URL=http://localhost:4000/api
+```
+
+Start the frontend:
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## Environment Variables
 
 ### Backend
-
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start dev server with hot reload |
-| `npm run build` | Compile TypeScript |
-| `npm run db:generate` | Generate Drizzle migration files |
-| `npm run db:migrate` | Apply migrations to the database |
-| `npm run db:seed` | Insert sample issues and comments |
-| `npm run db:studio` | Open Drizzle Studio (DB browser) |
+| Variable | Description | Example |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/issue_tracker` |
+| `PORT` | Server port | `4000` |
+| `GEMINI_API_KEY` | Google Gemini API key | `Abcd...` |
 
 ### Frontend
+| Variable | Description | Example |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | Backend API base URL | `http://localhost:4000/api` |
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start Next.js dev server |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
+---
 
-## Live Demo
+## Database Schema
 
-Run locally:
+- **issues** — id, title, description, status, priority, label, created_at, updated_at
+- **comments** — id, issue_id, content, author, created_at
+- **ai_analyses** — id, issue_id, summary, root_cause, suggestions, sentiment, generated_at
 
-- **Frontend:** [http://localhost:3000](http://localhost:3000)
-- **Backend:** [http://localhost:4000/api/health](http://localhost:4000/api/health)
+---
 
-## License
+## Docker Setup
 
-MIT
+### Prerequisites
+- Docker Desktop installed and running
+
+### Run with Docker Compose
+
+1. Clone the repo
+```bash
+   git clone https://github.com/sallu09876/issue_tracker.git
+   cd issue_tracker
+```
+
+2. Create a `.env` file in the project root:
+```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+3. Start all services:
+```bash
+   docker-compose up --build
+```
+
+4. Open the app:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:4000/api
+   - Health check: http://localhost:4000/api/health
+
+5. Stop all services:
+```bash
+   docker-compose down
+```
+
+> Database data is persisted in a Docker volume. To reset:
+> `docker-compose down -v`
