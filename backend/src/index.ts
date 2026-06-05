@@ -7,11 +7,14 @@ import { errorHandler } from './middleware/errorHandler';
 import analysisRouter from './routes/analysis';
 import commentsRouter from './routes/comments';
 import issuesRouter from './routes/issues';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => {

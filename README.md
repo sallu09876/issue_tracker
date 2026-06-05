@@ -305,3 +305,12 @@ Open [http://localhost:3000](http://localhost:3000)
 ```bash
    docker-compose down
 ```
+
+---
+
+
+## API Documentation
+
+Interactive Swagger UI available at:
+- **Live:** https://issue-tracker-backend-f167.onrender.com/api/docs
+- **Local:** http://localhost:4000/api/docs
