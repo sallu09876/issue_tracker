@@ -1,6 +1,8 @@
 import './loadEnv';
 import cors from 'cors';
 import express from 'express';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { db } from './db';
 import { errorHandler } from './middleware/errorHandler';
 import analysisRouter from './routes/analysis';
 import commentsRouter from './routes/comments';
@@ -19,9 +21,21 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/issues', issuesRouter);
 app.use('/api/comments', commentsRouter);
 app.use('/api/analysis', analysisRouter);
-
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+async function startServer() {
+  try {
+    console.log('Running database migrations...');
+    await migrate(db, { migrationsFolder: './drizzle/migrations' });
+    console.log('Migrations complete ✓');
+
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
