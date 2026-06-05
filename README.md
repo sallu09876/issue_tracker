@@ -271,3 +271,40 @@ Open [http://localhost:3000](http://localhost:3000)
 - **comments** — id, issue_id, content, author, created_at
 - **ai_analyses** — id, issue_id, summary, root_cause, suggestions, sentiment, generated_at
 
+---
+
+## Docker Setup
+
+### Prerequisites
+- Docker Desktop installed and running
+
+### Run with Docker Compose
+
+1. Clone the repo
+```bash
+   git clone https://github.com/sallu09876/issue_tracker.git
+   cd issue_tracker
+```
+
+2. Create a `.env` file in the project root:
+```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+3. Start all services:
+```bash
+   docker-compose up --build
+```
+
+4. Open the app:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:4000/api
+   - Health check: http://localhost:4000/api/health
+
+5. Stop all services:
+```bash
+   docker-compose down
+```
+
+> Database data is persisted in a Docker volume. To reset:
+> `docker-compose down -v`
