@@ -305,10 +305,3 @@ Open [http://localhost:3000](http://localhost:3000)
 ```bash
    docker-compose down
 ```
-
-> Database data is persisted in a Docker volume. To reset:
-<<<<<<< HEAD
-> `docker-compose down -v`
-=======
-> `docker-compose down -v`
->>>>>>> 27caa23cdec7ac82340ad58ac77315c6b942c5b6
