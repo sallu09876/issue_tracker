@@ -247,6 +247,14 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+
+### Run both servers together
+npm install        # installs concurrently
+npm run dev        # starts backend + frontend together
+
+- Frontend: http://localhost:3000
+- Backend:  http://localhost:4000
+
 ---
 
 ## Environment Variables
